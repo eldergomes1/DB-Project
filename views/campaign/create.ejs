@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body>
+    <p>Datos de la campaña</p>
+    <form action="/campana/create" method="post">
+        <input type="text" placeholder="nombre" name="nombre">
+        <select name="lider" id="">
+            <% users.forEach(user => { %>
+            <option value=<%= user.idusuario %>><%= user.username %></option>
+            <% }) %>
+        </select>
+        <button type="submit">crear</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body>
+    <form action=<%= /campaign/ + campaign.idcampana + "/edit" %> method="post">
+        <% if(session.administrador){ %>
+            <input type="text" placeholder="nombre" value=<%= campaign.nombre %> name="nombre">
+        <% } %>
+        <% if(session.lider){ %>
+            <input type="text" placeholder="objetivo" value=<%= campaign.objetivo %> name="objetivo">
+            <div id="products">
+
+            </div>
+        <% } %>
+        <button type="submit">guardar</button>
+    </form>
+</body>
+</html>
