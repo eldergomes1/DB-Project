@@ -20,5 +20,6 @@ router.post('/campana/create', Campaign.createPost);
 router.get('/campana', Campaign.findAll);
 router.get('/campana/:id', Campaign.find);
 router.get('/campana/:id/edit', Campaign.addProductsGet);
+router.post('/campana/:id/edit', Campaign.addProductsPost);
 
 module.exports = router;

@@ -50,7 +50,7 @@ createPost = async function(req, res)
     if (session && session.administrador){
 		const query = 'insert into usuario(username, pass, agente, lider, administrador) values ($1, $2, $3, $4, $5)';
 		let dbres = await db.query(query, [body.username, body.pass, roles.agente, roles.lider, roles.admin]);
-        res.send('<div><p>Creacion exitosa</p><a href=\"/campana\">volver</a></div>');
+        res.render('success');
 	}else{
         res.redirect('/login');
     }

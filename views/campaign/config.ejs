@@ -5,17 +5,44 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 </head>
 <body>
-    <form action=<%= /campaign/ + campaign.idcampana + "/edit" %> method="post">
-        <% if(session.administrador){ %>
-            <input type="text" placeholder="nombre" value=<%= campaign.nombre %> name="nombre">
-        <% } %>
+    <form action=<%= /campana/ + campaign.idcampana + "/edit" %> method="post">
+        <div>
+            <% if(session.administrador){ %>
+                <input type="text" placeholder="nombre" name="name" value=<%= campaign.nombre %> >
+                <select name="lider" id="">
+                
+                </select>
+            <% } %>
+            <% if(session.lider){ %>
+                <input type="text" placeholder="objetivo" name="target" value=<%= campaign.objetivo %> >
+            <% } %>
+        </div>
         <% if(session.lider){ %>
-            <input type="text" placeholder="objetivo" value=<%= campaign.objetivo %> name="objetivo">
+            <button type="button" onclick="add()">agregar producto</button>
             <div id="products">
-
+                <% products.forEach((element, index) => { %>
+                    <div>
+                        <input hidden type='text' name=<%= "products["+index+"][id]" %> value=<%= element.idproducto %>>
+                        <input placeholder='descripcion del producto' type='text' name=<%= "products["+index+"][description]" %> value=<%= element.titulo %>>
+                        <input placeholder='costo' type='text' name=<%= "products["+index+"][price]" %> value=<%= element.costo %>>
+                        <small>producto <input type='radio' value='bien' name=<%= "products["+index+"][type]" %> <% if(element.tipo == 'bien'){%> checked <%}%> ></small>
+                        <small>servicio <input type='radio' value='servicio' name=<%= "products["+index+"][type]" %> <% if(element.tipo == 'servicio'){%> checked <%}%> ></small>
+                    </div>
+                <% }); %>
             </div>
         <% } %>
         <button type="submit">guardar</button>
     </form>
 </body>
 </html>
+<script>
+    //var index = 0;
+    const add = function()
+    {
+        let index = document.getElementById("products").childElementCount;
+        let div = document.createElement('div');
+        div.innerHTML = "<input placeholder='descripcion del producto' type='text' name='products["+index+"][description]'><input placeholder='costo' type='text' name='products["+index+"][price]'><small>producto <input value='bien' type='radio' name='products["+index+"][type]'></small><small>servicio <input type='radio' value='servicio' name='products["+index+"][type]'></small>";
+        document.getElementById("products").appendChild(div);
+        //index+=1;
+    };
+</script>
