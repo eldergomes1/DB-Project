@@ -83,16 +83,35 @@ async function addProductsGet(req, res)
     console.log("session ", session);
     if (session){
         if (session.administrador || session.lider) {
-            let queryRes = await db.query('select * from campana where idcampana=$1', [campaignID]); 
-            let product = await db.query('select * from producto where idcampana=$1', [campaignID]); 
+            let campaignR = await db.query('select * from campana where idcampana=$1', [campaignID]); 
+            let productR = await db.query('select * from producto where idcampana=$1', [campaignID]); 
+            
+            let users = await db.query('select * from usuario where lider=true or agente=true'); 
+            let equipo = await db.query('select idequipo, e.idusuario, username from equipo as e join usuario as u on u.idusuario=e.idusuario where idcampana=$1;', [campaignID]); 
+            let team = [];
+            console.log("len", users.rows.length);
+            users.rows.forEach(item => {
+                let index = equipo.rows.findIndex(user => user.idusuario == item.idusuario);
+                console.log(index);
+                team.push({
+                    id:item.idusuario,
+                    username:item.username,
+                    isAgent: index != -1
+                });
+            });
+            
+            console.log(team);
             let data = {
                 session:session, 
-                campaign:queryRes.rows[0], 
-                products:product.rows
+                campaign:campaignR.rows[0], 
+                products:productR.rows,
+                team:equipo.rows,
             };
             if (session.administrador){
-                data.posiblesLideres = await db.query('select * from producto where lider=true'); 
+                let usersR = await db.query('select * from usuario where lider=true'); 
+                data.posiblesLideres = usersR.rows;
             }
+            //console.log(data);
             res.render("campaign/config", data);
         }else{
             res.redirect('/campana');
@@ -106,9 +125,8 @@ async function addProductsPost(req, res){
     let session = req.session.userLogged;
     let body = req.body;
     if (session && session.lider){
-
         try {
-            let prod = await db.query('update campana set nombre=$1, objetivo=$2 where idcampana=$3', [body.name, body.target, campaignID]);
+            let prod = await db.query('update campana set nombre=$1, objetivo=$2, lider=$4 where idcampana=$3', [body.name, body.target, campaignID, body.lider]);
             if (req.body.products !== undefined) {
                 for (let i = 0; i < req.body.products.length; i++) {
                     let product = req.body.products[i];

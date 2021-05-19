@@ -8,9 +8,11 @@
     <form action=<%= /campana/ + campaign.idcampana + "/edit" %> method="post">
         <div>
             <% if(session.administrador){ %>
-                <input type="text" placeholder="nombre" name="name" value=<%= campaign.nombre %> >
-                <select name="lider" id="">
-                
+                <input type="text" placeholder="nombre" name="name" value='<%= campaign.nombre %>' >
+                <select name="lider">
+                <% posiblesLideres.forEach(item => { %>
+                    <option <% if(item.idusuario == campaign.lider){%> selected <%}%> value=<%= item.idusuario %> ><%= item.username %></option>
+                <% }) %>
                 </select>
             <% } %>
             <% if(session.lider){ %>
@@ -23,10 +25,18 @@
                 <% products.forEach((element, index) => { %>
                     <div>
                         <input hidden type='text' name=<%= "products["+index+"][id]" %> value=<%= element.idproducto %>>
-                        <input placeholder='descripcion del producto' type='text' name=<%= "products["+index+"][description]" %> value=<%= element.titulo %>>
+                        <input placeholder='descripcion del producto' type='text' name=<%= "products["+index+"][description]" %> value='<%= element.titulo %>' >
                         <input placeholder='costo' type='text' name=<%= "products["+index+"][price]" %> value=<%= element.costo %>>
                         <small>producto <input type='radio' value='bien' name=<%= "products["+index+"][type]" %> <% if(element.tipo == 'bien'){%> checked <%}%> ></small>
                         <small>servicio <input type='radio' value='servicio' name=<%= "products["+index+"][type]" %> <% if(element.tipo == 'servicio'){%> checked <%}%> ></small>
+                    </div>
+                <% }); %>
+            </div>
+            <div id="equipo">
+                <% team.forEach((element, index) => { %>
+                    <div>
+                        <input hidden type='text' name=<%= "team["+index+"][id]" %> value=<%= element.idusuario %> >
+                        <%= element.username %>
                     </div>
                 <% }); %>
             </div>

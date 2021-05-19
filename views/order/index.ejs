@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1><%= data[0].nombre %></h1>
+    <form action=<%= 'donar?id1='+ query.id1 +'&id2='+ query.id2 %> method="post">
+        <% data.forEach((item, i)=> { %>
+            <div>
+                <h3><%= item.titulo %></h3>
+                <p>costo: <%= item.costo %></p>
+                <!-- <%= item.tipo %> -->
+                <input type="checkbox" name=<%= 'products['+i+'][isselected]' %>>
+                <input type="hidden" name=<%= 'products['+i+'][idproducto]' %> value=<%= item.idproducto %>>
+            </div>
+            <hr>
+        <% }); %>
+        <div>
+            donacion voluntaria
+            <input type="text" name="donacion">
+        </div>
+        <input type="submit" value="donar">
+    </form>
+</body>
+</html>

@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var Campaign = require('../controllers/CampaignController');
 var User = require('../controllers/UserController');
+var Order = require('../controllers/OrderController');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -21,5 +22,7 @@ router.get('/campana', Campaign.findAll);
 router.get('/campana/:id', Campaign.find);
 router.get('/campana/:id/edit', Campaign.addProductsGet);
 router.post('/campana/:id/edit', Campaign.addProductsPost);
+router.get('/donar', Order.index);
+router.post('/donar', Order.donar);
 
 module.exports = router;
