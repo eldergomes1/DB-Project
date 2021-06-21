@@ -125,28 +125,35 @@ async function addProductsPost(req, res){
     let session = req.session.userLogged;
     let body = req.body;
     if (session && session.lider){
+        const client = await db.connect();
+        await client.query('BEGIN');
         try {
-            let prod = await db.query('update campana set nombre=$1, objetivo=$2, lider=$4 where idcampana=$3', [body.name, body.target, campaignID, body.lider]);
+            
+            let prod = await client.query('update campana set nombre=$1, objetivo=$2, lider=$4 where idcampana=$3', [body.name, body.target, campaignID, body.lider]);
             if (req.body.products !== undefined) {
                 for (let i = 0; i < req.body.products.length; i++) {
                     let product = req.body.products[i];
                     if (product.id) {
-                        let prod = await db.query('update producto set titulo=$1, costo=$2, tipo=$3 where idproducto=$4', [product.description, product.price, product.type, product.id]);
+                        let prod = await client.query('update producto set titulo=$1, costo=$2, tipo=$3 where idproducto=$4', [product.description, product.price, product.type, product.id]);
                     }else{
-                        let prod = await db.query('insert into producto(idcampana, titulo, costo, tipo) values ($1, $2, $3, $4)', [campaignID, product.description, product.price, product.type]);
+                        let prod = await client.query('insert into producto(idcampana, titulo, costo, tipo) values ($1, $2, $3, $4)', [campaignID, product.description, product.price, product.type]);
                     }
                 } 
             }
             let newAgents = req.body.newAgent;
             if (newAgents !== undefined) {
                 for (let i = 0; i < newAgents.length; i++) {
-                    let newAgentInsert = await db.query('insert into equipo(idcampana, idusuario) values ($1, $2)', [campaignID, newAgents[i]]);
+                    let newAgentInsert = await client.query('insert into equipo(idcampana, idusuario) values ($1, $2)', [campaignID, newAgents[i]]);
                 }
             }
+
+            await client.query('COMMIT');
             res.render('success');
         } catch (error) {
-            console.log(error);
+            await client.query('ROLLBACK');
             res.render('error');
+        }finally{
+            client.release();
         }
     }else{
         res.redirect('/login');
