@@ -33,6 +33,8 @@
                 <% }); %>
             </div>
             <div id="equipo">
+                <input type="hidden" id="allUsers" value=<%= JSON.stringify(posiblesLideres) %>>
+                <input type="button" id="addUser()" value="agregar usuario" onclick="addUser()">
                 <% team.forEach((element, index) => { %>
                     <div>
                         <input hidden type='text' name=<%= "team["+index+"][id]" %> value=<%= element.idusuario %> >
@@ -40,19 +42,35 @@
                     </div>
                 <% }); %>
             </div>
+            <div id="nuevosMiembros">
+
+            </div>
         <% } %>
         <button type="submit">guardar</button>
     </form>
 </body>
+
 </html>
 <script>
-    //var index = 0;
     const add = function()
     {
         let index = document.getElementById("products").childElementCount;
         let div = document.createElement('div');
         div.innerHTML = "<input placeholder='descripcion del producto' type='text' name='products["+index+"][description]'><input placeholder='costo' type='text' name='products["+index+"][price]'><small>producto <input value='bien' type='radio' name='products["+index+"][type]'></small><small>servicio <input type='radio' value='servicio' name='products["+index+"][type]'></small>";
         document.getElementById("products").appendChild(div);
-        //index+=1;
     };
+
+    const addUser = ()=>
+    {
+        let index = document.getElementById("nuevosMiembros").childElementCount;
+        let allUsers = JSON.parse(document.getElementById("allUsers").value);
+        let options = allUsers.map(user => "<option value="+user.idusuario+">"+user.username+"</option>").join("");
+
+        let div = document.createElement('div');
+        div.innerHTML = "<select name='newAgent[]'>"+options+"</select><input type='button' value='X' onclick=remove(event.target)>"
+        document.getElementById("nuevosMiembros").appendChild(div);
+    };
+
+    const remove = (element) => document.getElementById("nuevosMiembros").removeChild(element.parentNode);
+
 </script>

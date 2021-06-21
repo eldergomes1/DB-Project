@@ -87,7 +87,7 @@ async function addProductsGet(req, res)
             let productR = await db.query('select * from producto where idcampana=$1', [campaignID]); 
             
             let users = await db.query('select * from usuario where lider=true or agente=true'); 
-            let equipo = await db.query('select idequipo, e.idusuario, username from equipo as e join usuario as u on u.idusuario=e.idusuario where idcampana=$1;', [campaignID]); 
+            let equipo = await db.query('select e.idusuario, username from equipo as e join usuario as u on u.idusuario=e.idusuario where idcampana=$1;', [campaignID]); 
             let team = [];
             console.log("len", users.rows.length);
             users.rows.forEach(item => {
@@ -136,6 +136,12 @@ async function addProductsPost(req, res){
                         let prod = await db.query('insert into producto(idcampana, titulo, costo, tipo) values ($1, $2, $3, $4)', [campaignID, product.description, product.price, product.type]);
                     }
                 } 
+            }
+            let newAgents = req.body.newAgent;
+            if (newAgents !== undefined) {
+                for (let i = 0; i < newAgents.length; i++) {
+                    let newAgentInsert = await db.query('insert into equipo(idcampana, idusuario) values ($1, $2)', [campaignID, newAgents[i]]);
+                }
             }
             res.render('success');
         } catch (error) {
