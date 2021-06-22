@@ -10,7 +10,7 @@
             <% if(session.administrador){ %>
                 <input type="text" placeholder="nombre" name="name" value='<%= campaign.nombre %>' >
                 <select name="lider">
-                <% posiblesLideres.forEach(item => { %>
+                <% lideres.forEach(item => { %>
                     <option <% if(item.idusuario == campaign.lider){%> selected <%}%> value=<%= item.idusuario %> ><%= item.username %></option>
                 <% }) %>
                 </select>
@@ -33,7 +33,7 @@
                 <% }); %>
             </div>
             <div id="equipo">
-                <input type="hidden" id="allUsers" value=<%= JSON.stringify(posiblesLideres) %>>
+                <input type="hidden" id="allUsers" value=<%= JSON.stringify(agentes) %>>
                 <input type="button" id="addUser()" value="agregar usuario" onclick="addUser()">
                 <% team.forEach((element, index) => { %>
                     <div>

@@ -100,18 +100,16 @@ async function addProductsGet(req, res)
                 });
             });
             
-            console.log(team);
+            let lideres = await db.query('select * from usuario where lider=true'); 
+            let agentes = await db.query('select * from usuario where agente=true'); 
             let data = {
                 session:session, 
                 campaign:campaignR.rows[0], 
                 products:productR.rows,
                 team:equipo.rows,
+                lideres:lideres.rows,
+                agentes:agentes.rows
             };
-            if (session.administrador){
-                let usersR = await db.query('select * from usuario where lider=true'); 
-                data.posiblesLideres = usersR.rows;
-            }
-            //console.log(data);
             res.render("campaign/config", data);
         }else{
             res.redirect('/campana');
