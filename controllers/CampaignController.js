@@ -1,22 +1,38 @@
 const { json } = require('express');
 var db = require('../db/db');
 
+const insertEquipoQuery = 'insert into equipo(idcampana, idusuario) values ($1, $2)';
+
 async function createPost(req, res)
 {
     let body = req.body;
     let session = req.session.userLogged;
-    if (session && session.administrador){
+
+    if (session === undefined) {
+        res.redirect('/login');
+        return;
+    }
+
+    if (session.administrador) {
+        const client = await db.connect();
         try {
-            const query = 'insert into campana(nombre, lider) values ($1, $2)';
-            let queryRes = await db.query(query, [body.nombre, body.lider]);
+            await client.query('BEGIN');
+            const insertCampana = 'insert into campana(nombre, lider) values ($1, $2) returning idcampana';
+            let {rows:[campana]} = await client.query(insertCampana, [body.nombre, body.lider]);
+            await client.query(insertEquipoQuery, [campana.idcampana, body.lider]);
+            await client.query('COMMIT');
             res.render('success');
         } catch (error) {
             console.log(error);
+            await client.query('ROLLBACK');
             res.render('error');
+        }finally{
+            client.release();
         }
-    }else{
-        res.redirect('/login');
+        return;
     }
+
+    res.render('error');
 }
 
 async function createGet(req, res)
@@ -54,7 +70,7 @@ async function findAll(req, res)
     let session = req.session.userLogged;
     if (session)
     {
-        let query = 'select  c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
+        let query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
         
         if (session.lider) {
             query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario where c.lider=$1';
@@ -118,6 +134,7 @@ async function addProductsGet(req, res)
         res.redirect('/login');
     }
 }
+
 async function addProductsPost(req, res){
     let campaignID = req.params.id;
     let session = req.session.userLogged;
@@ -127,14 +144,30 @@ async function addProductsPost(req, res){
         await client.query('BEGIN');
         try {
             
-            let prod = await client.query('update campana set nombre=$1, objetivo=$2, lider=$4 where idcampana=$3', [body.name, body.target, campaignID, body.lider]);
+            let {rows:[campana]} = await client.query('select c.lider from campana as c where c.idcampana=$1', [campaignID]);
+            // Verificamos que se quiere cambiar el lider
+            if (campana.lider !== body.lider) {
+                // sacamos al lider anterior del equipo de campaña
+                // let deleteUserQuery = "delete from equipo as e where e.idcampana=$1 and e.idusuario=$2";
+                // await client.query(deleteUserQuery, [campaignID, campana.lider]);
+                
+                // Verificamos si el nuevo lider ya es parte del equipo
+                let liderActualQuery = "select * from equipo as e where e.idcampana=$1 and e.idusuario=$2"
+                let {rowCount:usuariosEncontrados} = await client.query(liderActualQuery, [campaignID, body.lider]);
+                if (usuariosEncontrados == 0) {
+                    // incorporamos al nuevo lider al equipo de campaña
+                    await client.query(insertEquipoQuery, [campaignID, body.lider]);
+                }
+            }
+
+            await client.query('update campana set nombre=$1, objetivo=$2, lider=$4 where idcampana=$3', [body.name, body.target, campaignID, body.lider]);
             if (req.body.products !== undefined) {
                 for (let i = 0; i < req.body.products.length; i++) {
                     let product = req.body.products[i];
                     if (product.id) {
-                        let prod = await client.query('update producto set titulo=$1, costo=$2, tipo=$3 where idproducto=$4', [product.description, product.price, product.type, product.id]);
+                        await client.query('update producto set titulo=$1, costo=$2, tipo=$3 where idproducto=$4', [product.description, product.price, product.type, product.id]);
                     }else{
-                        let prod = await client.query('insert into producto(idcampana, titulo, costo, tipo) values ($1, $2, $3, $4)', [campaignID, product.description, product.price, product.type]);
+                        await client.query('insert into producto(idcampana, titulo, costo, tipo) values ($1, $2, $3, $4)', [campaignID, product.description, product.price, product.type]);
                     }
                 } 
             }
@@ -148,6 +181,7 @@ async function addProductsPost(req, res){
             await client.query('COMMIT');
             res.render('success');
         } catch (error) {
+            console.log(error);
             await client.query('ROLLBACK');
             res.render('error');
         }finally{
