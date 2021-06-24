@@ -2,6 +2,11 @@ var db = require('../db/db.js');
 
 loginGet = function(req, res)
 {
+	if (req.session.userLogged !== undefined) {
+		res.redirect('/campana');
+		return;
+	}
+
 	res.render('login', {error:false});
 };
 

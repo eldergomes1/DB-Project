@@ -1,3 +1,4 @@
+const { render } = require('ejs');
 const db = require('../db/db');
 
 const index = async function(req, res){
@@ -80,31 +81,100 @@ const donar = async function(req, res){
     }
 };
 
-const orders = async (req, res) => {
+const ordenesQuery = "select o.idorden, v.titulo, v.costo from orden as o join venta as v on v.idorden = o.idorden where o.idusuario = $1 and o.idcampana = $2";
+
+const getOrders = async (req, res) => {
     let session = req.session.userLogged;
-    if (session === undefined)
-    {
+    let idusuario = req.query.idusuario;
+    let idcampana = req.query.idcampana;
+    if (session === undefined){
         res.redirect('/login');
         return;
     }
 
-    if (session.administrador){
-        let query = "select o.idorden, v.titulo, v.costo, u.username from venta as v join orden as o on v.idorden = o.idorden join usuario as u on o.idusuario = u.idusuario";
-        let reponse = await db.query(query, []);
-        res.send(reponse.rows);
+    // Un admistrador puede consultar las ordenes de campaña de cualquier usuario
+    if (session.administrador) {
+        let { rows:productosPorOrden } = await db.query(ordenesQuery, [idusuario, idcampana]);
+        res.send(productosPorOrden);
+        return;
+    }
+    
+    if (session.lider) {
+        // comprobamos si es parte del equipo de campaña
+        let campanaQuery = "select * from campana as c join equipo as e on c.idcampana = e.idcampana where e.idcampana=$1 and e.idusuario=$2";
+        let { rowCount, rows:campanas } = db.query(ordenesQuery, [idcampana, session.idusuario]);
+
+        // El usuario es parte del equipo de campana y ademas es el lider de esa campaña
+        // por ente puede consultar las ordenes de cualquier miembra de esa campaña
+        if (rowCount > 0 && campanas[0].lider === session.idusuario) {
+            let { rows:productosPorOrden } = await db.query(ordenesQuery,  [idusuario, idcampana]);
+            res.send(productosPorOrden);
+            return;
+        }
+        // El usuario es parte del equipo de campana pero no es lider de esa cmapaña
+        // por ende solo puede consultar sus ordenes
+        if (rowCount > 0 && campanas[0].lider !== session.idusuario) {
+            let { rows:productosPorOrden } = await db.query(ordenesQuery,  [idusuario, idcampana]);
+            res.send(productosPorOrden);
+            return;
+        }
     }
 
-    if (session.lider){
-        let query = "select o.idorden, v.titulo, v.costo from venta as v join orden as o on v.idorden = o.idorden join campana as c on c.idcampana = o.idcampana where c.lider = $1";
-        let reponse = await db.query(query, [session.idusuario]);
-        res.send(reponse.rows);
+    // Si el que consulta las ordenes des un agente 
+    // solo debe poder consultar sus propias ordenes
+    if (session.agente && session.idusuario == idusuario){
+        let { rows:productosPorOrden } = await db.query(ordenesQuery, [idusuario, idcampana]);
+        res.send(productosPorOrden);
+        return;
     }
 
-    if (session.agente){
-        let query = "select o.idorden, v.titulo, v.costo from venta as v join orden as o on v.idorden = o.idorden where o.idusuario = $1";
-        let reponse = await db.query(query, [session.idusuario]);
-        res.send(reponse.rows);
+    res.render("error");
+}
+
+const orders = async (req, res) => {
+    let idcampana = req.params.idcampana
+    // let idcampana = req.query.idcampana
+    // let idusuario = req.query.idusuario
+
+    let session = req.session.userLogged;
+    if (session === undefined) {
+        res.redirect('/login');
+        return;
     }
+    // el aministrador puede consultar cualquier equipo de cualquier campana
+    if (session.administrador) {
+        let teamQuery = "select u.idusuario, u.username from equipo as e join usuario as u on u.idusuario = e.idusuario where e.idcampana = $1";
+        let { rows:equipo } = await db.query(teamQuery, [idcampana]);
+        res.render("order/index", {equipo});
+        return
+    }
+    // el lider solo puede consultar los equipos que lidera
+    if (session.lider) {
+        let teamQuery = "select u.idusuario, u.username from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on u.idusuario = e.idusuario where e.idcampana = $1 and c.lider=$2";
+        let { rows:equipo } = await db.query(teamQuery, [idcampana, session.idusuario]);
+        res.render("order/index", {equipo});
+        return
+    }
+
+    res.render("error");
+
+    // if (session.administrador){
+    //     let query = "select o.idorden, v.titulo, v.costo, u.username from venta as v join orden as o on v.idorden = o.idorden join usuario as u on o.idusuario = u.idusuario";
+    //     let reponse = await db.query(query, []);
+    //     res.send(reponse.rows);
+    // }
+
+    // if (session.lider){
+    //     let query = "select o.idorden, v.titulo, v.costo from venta as v join orden as o on v.idorden = o.idorden join campana as c on c.idcampana = o.idcampana where c.lider = $1";
+    //     let reponse = await db.query(query, [session.idusuario]);
+    //     res.send(reponse.rows);
+    // }
+
+    // if (session.agente){
+    //     let query = "select o.idorden, v.titulo, v.costo from venta as v join orden as o on v.idorden = o.idorden where o.idusuario = $1";
+    //     let reponse = await db.query(query, [session.idusuario]);
+    //     res.send(reponse.rows);
+    // }
 
 
 
@@ -125,5 +195,6 @@ const orders = async (req, res) => {
 module.exports = {
     index,
     donar,
-    orders
+    orders,
+    getOrders
 }

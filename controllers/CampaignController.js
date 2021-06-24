@@ -68,70 +68,71 @@ async function find(req, res)
 async function findAll(req, res)
 {
     let session = req.session.userLogged;
-    if (session)
-    {
-        let query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
-        
-        if (session.lider) {
-            query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario where c.lider=$1';
-        }
-        if (session.administrador) {
-            query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario';
-        }
-        
-        query += ' order by c.idcampana desc';
-
-        if (session.administrador) {
-            var queryRes = await db.query(query); 
-        }else{
-            var queryRes = await db.query(query, [session.idusuario]); 
-        }
-        res.render('campaign/index', { campaigns: queryRes.rows, session: session })
-    }else{
+    if (session === undefined) {
         res.redirect('/login');
+        return;
     }
+
+    let query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
+    
+    if (session.lider) {
+        query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario where c.lider=$1';
+    }
+
+    if (session.administrador) {
+        query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario';
+    }
+    
+    query += ' order by c.idcampana desc';
+
+    if (session.administrador) {
+        var queryRes = await db.query(query); 
+    }else{
+        var queryRes = await db.query(query, [session.idusuario]); 
+    }
+    res.render('campaign/index', { campaigns: queryRes.rows, session: session })
 }
 
 async function addProductsGet(req, res)
 {
     let campaignID = req.params.id;
     let session = req.session.userLogged;
-    console.log("session ", session);
-    if (session){
-        if (session.administrador || session.lider) {
-            let campaignR = await db.query('select * from campana where idcampana=$1', [campaignID]); 
-            let productR = await db.query('select * from producto where idcampana=$1', [campaignID]); 
-            
-            let users = await db.query('select * from usuario where lider=true or agente=true'); 
-            let equipo = await db.query('select e.idusuario, username from equipo as e join usuario as u on u.idusuario=e.idusuario where idcampana=$1;', [campaignID]); 
-            let team = [];
-            console.log("len", users.rows.length);
-            users.rows.forEach(item => {
-                let index = equipo.rows.findIndex(user => user.idusuario == item.idusuario);
-                console.log(index);
-                team.push({
-                    id:item.idusuario,
-                    username:item.username,
-                    isAgent: index != -1
-                });
-            });
-            
-            let lideres = await db.query('select * from usuario where lider=true'); 
-            let agentes = await db.query('select * from usuario where agente=true'); 
-            let data = {
-                session:session, 
-                campaign:campaignR.rows[0], 
-                products:productR.rows,
-                team:equipo.rows,
-                lideres:lideres.rows,
-                agentes:agentes.rows
-            };
-            res.render("campaign/config", data);
-        }else{
-            res.redirect('/campana');
-        }
-    }else{
+    if (session === undefined) {
         res.redirect('/login');
+        return;
+    }
+
+    if (session.administrador || session.lider) {
+        let campaignR = await db.query('select * from campana where idcampana=$1', [campaignID]); 
+        let productR = await db.query('select * from producto where idcampana=$1', [campaignID]); 
+        
+        let users = await db.query('select * from usuario where lider=true or agente=true'); 
+        let equipo = await db.query('select e.idusuario, username from equipo as e join usuario as u on u.idusuario=e.idusuario where idcampana=$1;', [campaignID]); 
+        let team = [];
+        console.log("len", users.rows.length);
+        users.rows.forEach(item => {
+            let index = equipo.rows.findIndex(user => user.idusuario == item.idusuario);
+            console.log(index);
+            team.push({
+                id:item.idusuario,
+                username:item.username,
+                isAgent: index != -1
+            });
+        });
+        
+        let lideres = await db.query('select * from usuario where lider=true'); 
+        let agentes = await db.query('select * from usuario where agente=true'); 
+        let data = {
+            session:session, 
+            campaign:campaignR.rows[0], 
+            products:productR.rows,
+            team:equipo.rows,
+            lideres:lideres.rows,
+            agentes:agentes.rows
+        };
+        res.render("campaign/config", data);
+    }else{
+        res.redirect('/campana');
     }
 }
 
@@ -150,7 +151,7 @@ async function addProductsPost(req, res){
                 // sacamos al lider anterior del equipo de campaña
                 // let deleteUserQuery = "delete from equipo as e where e.idcampana=$1 and e.idusuario=$2";
                 // await client.query(deleteUserQuery, [campaignID, campana.lider]);
-                
+
                 // Verificamos si el nuevo lider ya es parte del equipo
                 let liderActualQuery = "select * from equipo as e where e.idcampana=$1 and e.idusuario=$2"
                 let {rowCount:usuariosEncontrados} = await client.query(liderActualQuery, [campaignID, body.lider]);
