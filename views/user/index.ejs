@@ -6,7 +6,8 @@
 </head>
 <body>
     <% if(isAdmin){ %>
-        <a href="/usuario/create">crear usuario</a>
+        <input type="button" onclick=<%="location.href='/usuario/create'" %> value="Crear usuario">
+        <!-- <a href="/usuario/create">crear usuario</a> -->
     <% } %>
     <table>
         <tr>

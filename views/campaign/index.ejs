@@ -5,13 +5,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 </head>
 <body>
-    <% if(session.administrador){ %>
-        <a href="/campana/create"> crear campaña</a>
-        <a href="/usuario"> lista de usuario</a>
-    <% } %>
-    <form action="/logout" method="POST">
-        <button type="submit">cerrar sesion</button> 
-    </form>
+    <div style="display: flex;">
+        <% if(session.administrador){ %>
+            <input type="button" onclick=<%="location.href='/campana/create'" %> value="Crear campaña">
+            <input type="button" onclick=<%="location.href='/usuario'" %> value="Lista de usuario">
+        <% } %>
+        <form action="/logout" method="POST">
+            <button type="submit">cerrar sesion</button> 
+        </form>
+    </div>
+    <h2>Campañas</h2>
     <table>
     <tr>
         <th>id</th>
@@ -23,8 +26,12 @@
         <th>acciones</th>
         <% } %>
     </tr>
-    <% campaigns.forEach(campaign => { %>
-        <tr>
+    <% 
+    let colors = {a:"#cfecf1", b:"white"} 
+    campaigns.forEach((campaign, index) => { 
+    let actualC = index % 2 == 0 ? colors.a : colors.b  ;
+    %>
+        <tr style=<%= `background-color:${actualC}`%>>
             <td><%= campaign.idcampana %></td>
             <td><%= campaign.nombre %></td>
             <td><%= campaign.username %></td>
@@ -32,11 +39,11 @@
             <td><%= campaign.recaudado %></td>
             <td>
                 <% if(session.administrador || session.lider && session.idusuario === campaign.idusuario){ %>
-                    <a href= <%= '/campana/'+campaign.idcampana+'/edit' %>>edit</a>
+                    <!-- <a href= <%= '/campana/'+campaign.idcampana+'/edit' %>>edit</a> -->
+                    <input type="button" onclick=<%="location.href='/campana/"+campaign.idcampana+"/edit'" %> value="Editar">
                 <% } %>
-            </td>
-            <td>
-                <a href= <%= '/ordenes/'+campaign.idcampana %>>ver detalles</a>
+                <!-- <a href= <%= '/ordenes/'+campaign.idcampana %>>ver detalles</a> -->
+                <input type="button" onclick=<%="location.href='/ordenes/"+campaign.idcampana+"'" %> value="Ver detalles">
             </td>
         </tr>
     <% }); %>

@@ -7,7 +7,7 @@
 <body>
     <div style="display: flex;">
         <div style="width: 50%;">
-            <h3>Miembros del equipo de campaña</h3>
+            <h2>Miembros del equipo de campaña</h2>
             <table >
                 <tr>
                     <th>id</th>
@@ -25,7 +25,7 @@
         </div>
         <div style="width: 50%;">
             <div>
-                <h3>Ordenes</h3>
+                <h2>Ordenes</h2>
                 <p id="total"></p>
             </div>
             <hr>
@@ -46,15 +46,15 @@
         let dom = []; 
         let recaudado = 0;
         orders.forEach(item => {
-            let title = `<p>codigo de orden: ${item.idorden}</p>`;
-            let products = item.products.map(p => `<div><p>${p.titulo} </p><p>${p.costo}</p></div>`);
+            let title = `<h3>codigo de orden: ${item.idorden}</h3>`;
+            let products = item.products.map(p => `<li><p>titulo: ${p.titulo} </p><p>costo: ${p.costo}</p></li>`);
             let subtitle = products.length > 0 ? "<p>productos</p>" : "";
             let monto = item.donacion != undefined ? item.donacion : 0;
             let donacion = `<p>donacion voluntaria: ${monto}</p>`;
             let total = item.products.reduce((acc, p)=>acc + Number(p.costo), 0) + monto;
             recaudado += total;
-            let totaltext = `<p>total a pagar: ${total}</p>`;
-            let content = title+subtitle+products.reduce((acc, e) => acc+e, "")+donacion+totaltext+"<hr>";
+            let totaltext = `<strong>total a pagar: ${total}</strong>`;
+            let content = title+subtitle+"<ul>"+products.reduce((acc, e) => acc+e, "")+"</ul>"+donacion+totaltext+"<hr>";
             dom.push(content);
         });
         document.getElementById("columna_2").innerHTML = dom.reduce((acc, e) => acc+e, "");

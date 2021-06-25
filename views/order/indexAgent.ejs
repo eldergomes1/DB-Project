@@ -6,8 +6,8 @@
 </head>
 <body>
     <div>
-        <h3>Ordenes</h3>
-        <p id="total"></p>
+        <h2>Ordenes</h2>
+        <h3 id="total"></h3>
         <button onclick=<%= `copy(${session.idusuario})` %>>Copiar link de donacion</button>
         <hr>
     </div>
@@ -16,20 +16,25 @@
         let recaudado = 0;
         orders.forEach(item => { 
         %>
-        <p>codigo de orden: <%= item.idorden %></p>
+        <h3>codigo de orden: <%= item.idorden %></h3>
         <% if(item.products.length > 0){ %>
             <p>productos</p>
         <% } %>
+        <ul>
         <% item.products.forEach(p => { %>
-            <div><p><%= p.titulo %></p><p><%= p.costo %></p></div>
+            <li>
+                <p>titulo: <%= p.titulo %></p>
+                <p>costo: <%= p.costo %></p>
+            </li>
         <% }); %>
+        </ul>
         <% 
             let monto = item.donacion != undefined ? item.donacion : 0; 
             let total = item.products.reduce((acc, p)=>acc + Number(p.costo), 0) + monto;
             recaudado += total;
         %>
         <p>donacion voluntaria:<%= monto %></p>
-        <p>total a pagar: <%= total %></p>
+        <strong>Total a pagar: <%= total %></strong>
         <hr>
         <% }); %>
         <input type="hidden" id="recaudado" value=<%= recaudado %>>

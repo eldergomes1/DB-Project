@@ -2,8 +2,8 @@
 
 **Integrantes del equipo**
 - Elder Gomes 25.108.409
-- Danilo
-- Joyner
+- Danilo Lopez 27.424.264
+- Joyner Ramos 27.261.559
 
 ## Intrucciones de instalacion
 
