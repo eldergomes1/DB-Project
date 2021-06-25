@@ -5,18 +5,77 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 </head>
 <body>
-    <h3>Miembros del equipo de campaña</h3>
-    <table>
-    <tr>
-        <th>id</th>
-        <th>ussername</th>
-    </tr>
-    <% equipo.forEach(usuario => { %>
-        <tr>
-            <td><%= usuario.idusuario %></td>
-            <td><%= usuario.username %></td>
-        </tr>
-    <% }); %>
-    </table>
+    <div style="display: flex;">
+        <div style="width: 50%;">
+            <h3>Miembros del equipo de campaña</h3>
+            <table >
+                <tr>
+                    <th>id</th>
+                    <th>ussername</th>
+                </tr>
+                <% equipo.forEach(usuario => { %>
+                    <tr>
+                        <td><%= usuario.idusuario %></td>
+                        <td><%= usuario.username %></td>
+                        <td><button onclick=<%= "fetchOrders("+usuario.idusuario+")" %>>ver ordenes</button></td>
+                    </tr>
+                <% }); %>
+            </table>
+        </div>
+        <div style="width: 50%;">
+            <div>
+                <h3>Ordenes</h3>
+                <p id="total"></p>
+            </div>
+            <hr>
+            <div id="columna_2">
+
+            </div>
+        </div>
+        <!-- <div id="columna_3" style="width: 33%;">
+
+        </div> -->
+    </div>
+    
 </body>
 </html>
+<script>
+    const append = (orders)=>{
+        // let dom = orders.map(item => {
+        let dom = []; 
+        let recaudado = 0;
+        orders.forEach(item => {
+            let title = `<p>codigo de orden: ${item.idorden}</p>`;
+            let products = item.products.map(p => `<div><p>${p.titulo} </p><p>${p.costo}</p></div>`);
+            let subtitle = products.length > 0 ? "<p>productos</p>" : "";
+            let monto = item.donacion != undefined ? item.donacion : 0;
+            let donacion = `<p>donacion voluntaria: ${monto}</p>`;
+            let total = item.products.reduce((acc, p)=>acc + Number(p.costo), 0) + monto;
+            recaudado += total;
+            let totaltext = `<p>total a pagar: ${total}</p>`;
+            let content = title+subtitle+products.reduce((acc, e) => acc+e, "")+donacion+totaltext+"<hr>";
+            dom.push(content);
+        });
+        document.getElementById("columna_2").innerHTML = dom.reduce((acc, e) => acc+e, "");
+        document.getElementById("total").innerText = "recaudado por el usuario: "+recaudado;
+        console.log(orders);
+    } 
+
+    const fetchOrders = (idusuario)=>{
+        let idcampana = window.location.pathname.replace("/ordenes/", "");
+        fetch("/ordenes?idcampana="+idcampana+"&idusuario="+idusuario, {
+            method:'get',
+            credentials:'include',
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.json();
+        })
+        .then(append)
+        .catch(err =>{
+            console.log(err);
+        });
+    }
+</script>

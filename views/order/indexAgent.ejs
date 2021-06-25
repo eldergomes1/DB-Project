@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body>
+    <div>
+        <h3>Ordenes</h3>
+        <p id="total"></p>
+        <hr>
+    </div>
+    <div>
+        <% 
+        let recaudado = 0;
+        orders.forEach(item => { 
+        %>
+        <p>codigo de orden: <%= item.idorden %></p>
+        <% if(item.products.length > 0){ %>
+            <p>productos</p>
+        <% } %>
+        <% item.products.forEach(p => { %>
+            <div><p><%= p.titulo %></p><p><%= p.costo %></p></div>
+        <% }); %>
+        <% 
+            let monto = item.donacion != undefined ? item.donacion : 0; 
+            let total = item.products.reduce((acc, p)=>acc + Number(p.costo), 0) + monto;
+            recaudado += total;
+        %>
+        <p>donacion voluntaria:<%= monto %></p>
+        <p>total a pagar: <%= total %></p>
+        <hr>
+        <% }); %>
+        <input type="hidden" id="recaudado" value=<%= recaudado %>>
+    </div>
+</body>
+</html>
+<script>
+    setTimeout(()=>{
+        document.getElementById("total").innerText = "recaudado por el usuario: "+document.getElementById("recaudado").value;
+    }, 34);
+</script>

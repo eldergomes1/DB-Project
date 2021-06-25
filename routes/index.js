@@ -24,7 +24,8 @@ router.get('/campana/:id/edit', Campaign.addProductsGet);
 router.post('/campana/:id/edit', Campaign.addProductsPost);
 router.get('/donar', Order.index);
 router.post('/donar', Order.donar);
-router.get('/ordenes', Order.getOrders);
+// router.get('/ordenes', Order.getOrders);
+router.get('/ordenes', Order.details);
 router.get('/ordenes/:idcampana', Order.orders);
 
 module.exports = router;

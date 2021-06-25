@@ -81,55 +81,85 @@ const donar = async function(req, res){
     }
 };
 
-const ordenesQuery = "select o.idorden, v.titulo, v.costo from orden as o join venta as v on v.idorden = o.idorden where o.idusuario = $1 and o.idcampana = $2";
+const procesarOrdenes = (response) => {
+    let list = [];
+    let lastOrden = undefined;
+    let orders = response.ordenesVenta;
+    for (let index = 0; index < orders.length; index++) {
+        const item = orders[index];
+        let auxindex = list.findIndex(elem => elem.idorden == item.idorden);
+        if (auxindex != -1) {
+            list[auxindex].products.push({titulo:item.titulo, costo:item.costo});
+        }else{
+            list.push({
+                idorden:item.idorden,
+                products:[{titulo:item.titulo, costo:item.costo}]  
+            });
+        }
+    }
+    return response.ordenesDonacion.reduce((acc, item) =>{
+        let auxindex = acc.findIndex(elem => elem.idorden == item.idorden);
+        if (auxindex != -1) {
+            acc[auxindex].donacion = Number(item.monto);
+        }else{
+            acc.push({
+                idorden:item.idorden,
+                products:[],
+                donacion:Number(item.monto)
+            });
+        }
+        return acc;
+    }, list);
+}
 
-const getOrders = async (req, res) => {
+const details = async (req, res) =>{
     let session = req.session.userLogged;
+    
     let idusuario = req.query.idusuario;
     let idcampana = req.query.idcampana;
     if (session === undefined){
-        res.redirect('/login');
-        return;
+        return res.status(401).send("Ocurrio un error");
     }
-
+    const order = async ()=>{
+        let { rows:ordenesVenta } = await db.query(ordenesQuery, [idusuario, idcampana]);
+        let { rows:ordenesDonacion } = await db.query(donacionQuery, [idusuario, idcampana]);
+        return procesarOrdenes({ordenesVenta, ordenesDonacion});
+    }
     // Un admistrador puede consultar las ordenes de campaña de cualquier usuario
     if (session.administrador) {
-        let { rows:productosPorOrden } = await db.query(ordenesQuery, [idusuario, idcampana]);
-        res.send(productosPorOrden);
-        return;
+        return res.send(await order());
     }
     
     if (session.lider) {
         // comprobamos si es parte del equipo de campaña
         let campanaQuery = "select * from campana as c join equipo as e on c.idcampana = e.idcampana where e.idcampana=$1 and e.idusuario=$2";
-        let { rowCount, rows:campanas } = db.query(ordenesQuery, [idcampana, session.idusuario]);
+        let { rowCount, rows:campanas } = await db.query(campanaQuery, [idcampana, session.idusuario]);
 
         // El usuario es parte del equipo de campana y ademas es el lider de esa campaña
         // por ente puede consultar las ordenes de cualquier miembra de esa campaña
         if (rowCount > 0 && campanas[0].lider === session.idusuario) {
-            let { rows:productosPorOrden } = await db.query(ordenesQuery,  [idusuario, idcampana]);
-            res.send(productosPorOrden);
-            return;
+            return res.send(await order());
         }
         // El usuario es parte del equipo de campana pero no es lider de esa cmapaña
         // por ende solo puede consultar sus ordenes
-        if (rowCount > 0 && campanas[0].lider !== session.idusuario) {
-            let { rows:productosPorOrden } = await db.query(ordenesQuery,  [idusuario, idcampana]);
-            res.send(productosPorOrden);
-            return;
+        if (rowCount > 0 && campanas[0].lider !== session.idusuario && session.idusuario == idusuario) {
+            return res.send(await order());
         }
     }
 
     // Si el que consulta las ordenes des un agente 
     // solo debe poder consultar sus propias ordenes
     if (session.agente && session.idusuario == idusuario){
-        let { rows:productosPorOrden } = await db.query(ordenesQuery, [idusuario, idcampana]);
-        res.send(productosPorOrden);
-        return;
+        let { rows:ordenesVenta } = await db.query(ordenesQuery, [idusuario, idcampana]);
+        let { rows:ordenesDonacion } = await db.query(donacionQuery, [idusuario, idcampana]);
+        res.render("order/index", procesarOrdenes({ordenesVenta, ordenesDonacion}));
+        // return res.send(procesarOrdenes({ordenesVenta, ordenesDonacion}));
     }
 
-    res.render("error");
+    return res.status(400).send("ocurrio un error");
 }
+const donacionQuery = "select o.idorden, d.monto from orden as o join donacion as d on d.idorden=o.idorden where o.idusuario = $1 and o.idcampana = $2";
+const ordenesQuery = "select o.idorden, v.titulo, v.costo from orden as o join venta as v on v.idorden = o.idorden where o.idusuario = $1 and o.idcampana = $2";
 
 const orders = async (req, res) => {
     let idcampana = req.params.idcampana
@@ -148,53 +178,37 @@ const orders = async (req, res) => {
         res.render("order/index", {equipo});
         return
     }
+    // comprobamos si es parte del equipo de campaña
+    let campanaQuery = "select * from campana as c join equipo as e on c.idcampana = e.idcampana where e.idcampana=$1 and e.idusuario=$2";
+    let { rowCount, rows:campanas } = await db.query(campanaQuery, [idcampana, session.idusuario]);
+    
+    if (rowCount == 0) {
+        res.render("error");
+    }
     // el lider solo puede consultar los equipos que lidera
-    if (session.lider) {
+    if (session.lider && campanas[0].lider === session.idusuario) {
         let teamQuery = "select u.idusuario, u.username from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on u.idusuario = e.idusuario where e.idcampana = $1 and c.lider=$2";
         let { rows:equipo } = await db.query(teamQuery, [idcampana, session.idusuario]);
         res.render("order/index", {equipo});
         return
     }
 
+    // Si el que consulta las ordenes des un agente 
+    // solo debe poder consultar sus propias ordenes
+    // if (session.agente && session.idusuario == idusuario){
+    if (session.agente){
+        let { rows:ordenesVenta } = await db.query(ordenesQuery, [session.idusuario, idcampana]);
+        let { rows:ordenesDonacion } = await db.query(donacionQuery, [session.idusuario, idcampana]);
+        res.render("order/indexAgent", {orders:procesarOrdenes({ordenesVenta, ordenesDonacion})});
+        return;
+    }
     res.render("error");
-
-    // if (session.administrador){
-    //     let query = "select o.idorden, v.titulo, v.costo, u.username from venta as v join orden as o on v.idorden = o.idorden join usuario as u on o.idusuario = u.idusuario";
-    //     let reponse = await db.query(query, []);
-    //     res.send(reponse.rows);
-    // }
-
-    // if (session.lider){
-    //     let query = "select o.idorden, v.titulo, v.costo from venta as v join orden as o on v.idorden = o.idorden join campana as c on c.idcampana = o.idcampana where c.lider = $1";
-    //     let reponse = await db.query(query, [session.idusuario]);
-    //     res.send(reponse.rows);
-    // }
-
-    // if (session.agente){
-    //     let query = "select o.idorden, v.titulo, v.costo from venta as v join orden as o on v.idorden = o.idorden where o.idusuario = $1";
-    //     let reponse = await db.query(query, [session.idusuario]);
-    //     res.send(reponse.rows);
-    // }
-
-
-
-
-    // let a = [];
-    // a.reduce((acc, item) => {
-    //     let index = acc.findIndex(elemt => elemt[item.idorden]);
-    //     if (index == -1) {
-    //         acc[item.idorden] = [item.titulo];
-    //         return acc;
-    //     }
-
-    //     acc[item.idorden].push(item.titulo);
-    // });
-
 }
 
 module.exports = {
     index,
     donar,
     orders,
-    getOrders
+    // getOrders,
+    details
 }
