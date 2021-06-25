@@ -18,6 +18,7 @@
                         <td><%= usuario.idusuario %></td>
                         <td><%= usuario.username %></td>
                         <td><button onclick=<%= "fetchOrders("+usuario.idusuario+")" %>>ver ordenes</button></td>
+                        <td><button onclick=<%= `copy(${usuario.idusuario})` %>>Copiar link de donacion</button></td>
                     </tr>
                 <% }); %>
             </table>
@@ -77,5 +78,14 @@
         .catch(err =>{
             console.log(err);
         });
+    }
+    
+    const copy = (idusuario) =>{
+        console.log(window.location);
+        let idcampana = window.location.pathname.replace("/ordenes/", "");
+        navigator.clipboard.
+        writeText(`${window.location.host}/donar?id1=${idcampana}&id2=${idusuario}`)
+        .then(()=> alert("link copiado al portapapeles"))
+        .catch(()=> alert("ocurrio un erro al copiar"));
     }
 </script>

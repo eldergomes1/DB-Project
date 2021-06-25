@@ -199,7 +199,7 @@ const orders = async (req, res) => {
     if (session.agente){
         let { rows:ordenesVenta } = await db.query(ordenesQuery, [session.idusuario, idcampana]);
         let { rows:ordenesDonacion } = await db.query(donacionQuery, [session.idusuario, idcampana]);
-        res.render("order/indexAgent", {orders:procesarOrdenes({ordenesVenta, ordenesDonacion})});
+        res.render("order/indexAgent", {orders:procesarOrdenes({ordenesVenta, ordenesDonacion}), session });
         return;
     }
     res.render("error");
