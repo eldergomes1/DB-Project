@@ -28,11 +28,11 @@
             <td><%= campaign.nombre %></td>
             <td><%= campaign.username %></td>
             <td><%= campaign.objetivo %></td>
-            <% if(session.lider){ %>
             <td>
-                <a href= <%= '/campana/'+campaign.idcampana+'/edit' %>>edit</a>
+                <% if(session.administrador || session.lider && session.idusuario === campaign.idusuario){ %>
+                    <a href= <%= '/campana/'+campaign.idcampana+'/edit' %>>edit</a>
+                <% } %>
             </td>
-            <% } %>
             <td>
                 <a href= <%= '/ordenes/'+campaign.idcampana %>>ver detalles</a>
             </td>

@@ -73,11 +73,12 @@ async function findAll(req, res)
         return;
     }
 
-    let query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
+    // let query = 'select u.idusuario, c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
     
-    if (session.lider) {
-        query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario where c.lider=$1';
-    }
+    // if (session.lider) {
+        query = "select u.idusuario, c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on u.idusuario=c.lider where c.idcampana in (select e.idcampana from equipo as e where e.idusuario=$1)";
+    //     // query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario where c.lider=$1';
+    // }
 
     if (session.administrador) {
         query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario';
@@ -144,10 +145,9 @@ async function addProductsPost(req, res){
         const client = await db.connect();
         await client.query('BEGIN');
         try {
-            
             let {rows:[campana]} = await client.query('select c.lider from campana as c where c.idcampana=$1', [campaignID]);
             // Verificamos que se quiere cambiar el lider
-            if (campana.lider !== body.lider) {
+            if (session.administrador && campana.lider !== body.lider) {
                 // sacamos al lider anterior del equipo de campaña
                 // let deleteUserQuery = "delete from equipo as e where e.idcampana=$1 and e.idusuario=$2";
                 // await client.query(deleteUserQuery, [campaignID, campana.lider]);
