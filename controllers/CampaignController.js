@@ -15,10 +15,20 @@ async function createPost(req, res)
 
     if (session.administrador) {
         const client = await db.connect();
+        await client.query('BEGIN');
         try {
-            await client.query('BEGIN');
-            const insertCampana = 'insert into campana(nombre, lider) values ($1, $2) returning idcampana';
-            let {rows:[campana]} = await client.query(insertCampana, [body.nombre, body.lider]);
+            if (body.lider == undefined) {
+                throw "usuario not null"
+            }
+
+            const usuarioQuery = 'select * from usuario where idusuario=$1';
+            let {rows:[usuario]} = await client.query(usuarioQuery, [body.lider]);
+            if (!usuario.lider) {
+                throw "permisos insuficentes"
+            }
+            console.log("llego");
+            const insertCampana = 'insert into campana(nombre, lider, objetivo) values ($1, $2, $3) returning idcampana';
+            let {rows:[campana]} = await client.query(insertCampana, [body.nombre, body.lider, body.objetivo]);
             await client.query(insertEquipoQuery, [campana.idcampana, body.lider]);
             await client.query('COMMIT');
             res.render('success');
@@ -76,12 +86,12 @@ async function findAll(req, res)
     // let query = 'select u.idusuario, c.idcampana, c.nombre, u.username, c.objetivo from campana as c join equipo as e on c.idcampana=e.idcampana join usuario as u on e.idusuario=u.idusuario where u.idusuario=$1';
     
     // if (session.lider) {
-        query = "select u.idusuario, c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on u.idusuario=c.lider where c.idcampana in (select e.idcampana from equipo as e where e.idusuario=$1)";
+    query = "select u.idusuario, c.idcampana, c.nombre, u.username, c.objetivo, c.recaudado from campana as c join usuario as u on u.idusuario=c.lider where c.idcampana in (select e.idcampana from equipo as e where e.idusuario=$1)";
     //     // query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario where c.lider=$1';
     // }
 
     if (session.administrador) {
-        query = 'select c.idcampana, c.nombre, u.username, c.objetivo from campana as c join usuario as u on c.lider=u.idusuario';
+        query = 'select c.idcampana, c.nombre, u.username, c.objetivo, c.recaudado from campana as c join usuario as u on c.lider=u.idusuario';
     }
     
     query += ' order by c.idcampana desc';

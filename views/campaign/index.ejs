@@ -18,6 +18,7 @@
         <th>nombre</th>
         <th>lider</th>
         <th>objetivo</th>
+        <th>recaudo total</th>
         <% if(session.administrador){ %>
         <th>acciones</th>
         <% } %>
@@ -28,6 +29,7 @@
             <td><%= campaign.nombre %></td>
             <td><%= campaign.username %></td>
             <td><%= campaign.objetivo %></td>
+            <td><%= campaign.recaudado %></td>
             <td>
                 <% if(session.administrador || session.lider && session.idusuario === campaign.idusuario){ %>
                     <a href= <%= '/campana/'+campaign.idcampana+'/edit' %>>edit</a>
