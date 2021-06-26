@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <h1><%= data[0].nombre %></h1>
+    <h1><%= campana.nombre %></h1>
     <form action=<%= 'donar?id1='+ query.id1 +'&id2='+ query.id2 %> method="post">
-        <% data.forEach((item, i)=> { %>
+        <% productos.forEach((item, i)=> { %>
             <div>
                 <h3><%= item.titulo %></h3>
                 <p>costo: <%= item.costo %></p>
