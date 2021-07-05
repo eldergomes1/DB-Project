@@ -45,20 +45,30 @@ createPost = async function(req, res)
 {
 	let body = req.body;
 	let session = req.session.userLogged;
-	let roles = 
-	{
-		agente: true,
-		admin: body.admin 
-	}
-	roles.lider = body.lider || body.admin;
+
+	let isAgent = true;
+	let isLider = body.lider ?? false;
+	let isAdmin = body.admin ?? false;
+	isLider = isLider || isAdmin;
 	 
-    if (session && session.administrador){
-		const query = 'insert into usuario(username, pass, agente, lider, administrador) values ($1, $2, $3, $4, $5)';
-		let dbres = await db.query(query, [body.username, body.pass, roles.agente, roles.lider, roles.admin]);
-        res.render('success');
-	}else{
+    if (session === undefined || !session.administrador){
         res.redirect('/login');
     }
+	let username = body.username;
+	let pass = body.pass;
+	const undefinedOrEmpty = (prop) => prop == undefined || prop === '' || prop.trim().length === 0;
+	try {
+		if (undefinedOrEmpty(username) || undefinedOrEmpty(pass)) {
+			throw "username o password vacios";
+		}
+
+		const query = 'insert into usuario(username, pass, agente, lider, administrador) values ($1, $2, $3, $4, $5)';
+		await db.query(query, [username, pass, isAgent, isLider, isAdmin]);
+		res.render('success');
+	} catch (error) {
+		res.render('error');
+		console.log(error);
+	}
 };
 
 findAll = async function(req, res)
