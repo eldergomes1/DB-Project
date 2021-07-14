@@ -47,8 +47,8 @@ createPost = async function(req, res)
 	let session = req.session.userLogged;
 
 	let isAgent = true;
-	let isLider = body.lider ?? false;
-	let isAdmin = body.admin ?? false;
+	let isLider = body.lider || false;
+	let isAdmin = body.admin || false;
 	isLider = isLider || isAdmin;
 	 
     if (session === undefined || !session.administrador){

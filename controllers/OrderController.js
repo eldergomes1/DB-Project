@@ -41,7 +41,7 @@ const donar = async function(req, res){
         if (req.body.products === undefined && req.body.donacion === '') {
             throw 'productos y donacion no proporcionados';
         }
-        let productSelected = (req.body.products ?? []).filter(produt => produt.isselected === 'on');
+        let productSelected = (req.body.products || []).filter(produt => produt.isselected === 'on');
         // if (productSelected.length == 0 && req.body.donacion === '') {
         //     throw 'productos y donacion no proporcionados';
         // }
